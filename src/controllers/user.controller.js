@@ -53,10 +53,15 @@ const login = async (req, res, next) => {
     if (!user) throw new Error('Invalid credentials');
 
     const isMatch = await bcrypt.compare(req.body.password, user.password);
-    if (!isMatch) throw new Error('Invalid credentials');
+    if (!isMatch){
+     res.json({
+      message:"Invalid credentials"
+     })
+     return;
+    } 
 
     const token = jwt.sign(
-      { email: user.email },
+      { id: user.id, role: user.role },
       'SECRET_KEY',
       { expiresIn: '1d' }
     );
@@ -82,7 +87,7 @@ const profile = async (req, res, next) => {
       user: user.email
     })
   }
-  
+
   catch (err) {
     console.log("err", err)
     next(err);
