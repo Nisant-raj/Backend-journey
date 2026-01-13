@@ -72,6 +72,8 @@ const login = async (req, res, next) => {
   }
 };
 
+
+// profile
 const profile = async (req, res, next) => {
   try {
     const user = await userModel.findOne({ email: req.body.email })
