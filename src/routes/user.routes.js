@@ -1,5 +1,5 @@
 const express = require('express');
-const {healthCheck,createUser,register,login,profile, refresh}= require('../controllers/user.controller');
+const {healthCheck,createUser,register,login,profile, refresh, getUsers}= require('../controllers/user.controller');
 const auth = require('../middlewares/auth.middleware');
 const authorize = require('../middlewares/role.middleware');
 
@@ -13,6 +13,7 @@ router.post('/profile',auth,profile);
 router.get('/admin-data', auth, authorize('admin'), (req, res) => {
   res.json({ message: 'Admin content' });
 });
-router.post('/refresh',refresh)
+router.post('/refresh',refresh);
+router.get('/users',auth,getUsers)
 
 module.exports = router;

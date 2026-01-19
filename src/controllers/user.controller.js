@@ -137,5 +137,28 @@ const refresh = async (req, res) => {
   res.json({ accessToken });
 };
 
+const getUsers = async (req, res)=>{
+  const page =req.query.page ||1;
+  const limit = req.query.limit || 1;
 
-module.exports = { healthCheck, createUser, register, login, profile, refresh }
+  const skip =(page-1)*limit;
+
+  const query={}
+
+  if (req.query.role){
+    query.role = req.query.role;
+  }
+
+  const users = await userModel.find(query)
+  .skip(skip)
+  .limit(limit);
+
+  const total = await userModel.countDocuments(query);
+   res.json({
+    data: users,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit)
+  });
+}
+module.exports = { healthCheck, createUser, register, login, profile, refresh, getUsers }
