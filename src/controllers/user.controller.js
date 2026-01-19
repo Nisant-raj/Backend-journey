@@ -60,12 +60,15 @@ const login = async (req, res, next) => {
      return;
     } 
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      'SECRET_KEY',
-      { expiresIn: '1d' }
-    );
+    // const token = jwt.sign(
+    //   { id: user.id, role: user.role },
+    //   'SECRET_KEY',
+    //   { expiresIn: '1d' }
+    // );
 
+    const token = generateTokens(user)
+    user.refreshToken = token.refreshToken;
+    await user.save();
     res.json({ token });
   } catch (err) {
     next(err);
@@ -86,7 +89,7 @@ const profile = async (req, res, next) => {
 
     res.json({
       success: true,
-      user: user.email
+      user: user
     })
   }
 
@@ -97,6 +100,42 @@ const profile = async (req, res, next) => {
 
 }
 
+JWT_SECRET='ABC123',
+JWT_REFRESH_SECRET='ABC1234'
+const generateTokens = (user) => {
+  const accessToken = jwt.sign(
+    { id: user._id, role: user.role },
+    JWT_SECRET,
+    { expiresIn: '15m' }
+  );
+
+  const refreshToken = jwt.sign(
+    { id: user._id },
+    JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  return { accessToken, refreshToken };
+};
+
+const refresh = async (req, res) => {
+  const { refreshToken } = req.body;
+
+  const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+  const user = await userModel.findById(decoded.id);
+
+  if (!user || user.refreshToken !== refreshToken) {
+    return res.status(401).json({ message: 'Invalid refresh token' });
+  }
+
+  const accessToken = jwt.sign(
+    { id: user._id, role: user.role },
+    JWT_SECRET,
+    { expiresIn: '15m' }
+  );
+
+  res.json({ accessToken });
+};
 
 
-module.exports = { healthCheck, createUser, register, login, profile }
+module.exports = { healthCheck, createUser, register, login, profile, refresh }
