@@ -40,6 +40,7 @@ const register = async (req, res, next) => {
       ...req.body,
       password: hashedPassword
     });
+    cache.clear();
     res.status(201).json(user);
   } catch (err) {
     next(err);
@@ -137,10 +138,11 @@ const refresh = async (req, res) => {
   res.json({ accessToken });
 };
 
+const cache = new Map();
 const getUsers = async (req, res)=>{
   const page =req.query.page ||1;
   const limit = req.query.limit || 1;
-
+  const role =req.query.role||user;
   const skip =(page-1)*limit;
 
   const query={}
@@ -149,16 +151,36 @@ const getUsers = async (req, res)=>{
     query.role = req.query.role;
   }
 
+  
+  // 🔑 Create unique cache key
+  const cacheKey = JSON.stringify({ page, limit, role });
+
+    // ✅ Check cache
+  if (cache.has(cacheKey)) {
+    const cached = cache.get(cacheKey);
+    return res.json(cached.data);
+  }
+
   const users = await userModel.find(query)
   .skip(skip)
   .limit(limit);
 
   const total = await userModel.countDocuments(query);
-   res.json({
+
+    const response = {
     data: users,
     total,
     page,
-    totalPages: Math.ceil(total / limit)
+    totalPages: Math.ceil(total / limit),
+  };
+
+   // 💾 Save to cache
+  cache.set(cacheKey, {
+    data: response,
+    timestamp: Date.now(),
   });
+
+
+   res.json(response);
 }
 module.exports = { healthCheck, createUser, register, login, profile, refresh, getUsers }
