@@ -6,7 +6,8 @@ const { healthCheck,
   profile,
   refresh,
   getUsers,
-  getUserById
+  getUserById,
+  logout
 } = require('../controllers/user.controller');
 const auth = require('../middlewares/auth.middleware');
 const authorize = require('../middlewares/role.middleware');
@@ -24,5 +25,6 @@ router.get('/admin-data', auth, authorize('admin'), (req, res) => {
 router.post('/refresh', refresh);
 router.get('/users', auth, getUsers),
 router.get('/getUserById/:id', getUserById)
+router.get('/logout',auth, logout)
 
 module.exports = router;

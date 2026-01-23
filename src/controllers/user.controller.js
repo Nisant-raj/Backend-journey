@@ -197,4 +197,14 @@ const getUserById = async (req, res) => {
   res.json(result);
 };
 
-module.exports = { healthCheck, createUser, register, login, profile, refresh, getUsers, getUserById }
+
+ const logout = async (req, res) => {
+  console.log("req",req.user)
+  req.user.refreshToken = null;
+  await req.user.save();
+
+  res.json({ message: 'Logged out successfully' });
+};
+
+
+module.exports = { healthCheck, createUser, register, login, profile, refresh, getUsers, getUserById, logout }
