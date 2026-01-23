@@ -1,6 +1,7 @@
 const userModel = require('../models/user.model')
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const getUserByIdService = require('../services/user.service.js');
 
 
 const healthCheck = (req, res) => {
@@ -54,12 +55,12 @@ const login = async (req, res, next) => {
     if (!user) throw new Error('Invalid credentials');
 
     const isMatch = await bcrypt.compare(req.body.password, user.password);
-    if (!isMatch){
-     res.json({
-      message:"Invalid credentials"
-     })
-     return;
-    } 
+    if (!isMatch) {
+      res.json({
+        message: "Invalid credentials"
+      })
+      return;
+    }
 
     // const token = jwt.sign(
     //   { id: user.id, role: user.role },
@@ -101,8 +102,8 @@ const profile = async (req, res, next) => {
 
 }
 
-JWT_SECRET='ABC123',
-JWT_REFRESH_SECRET='ABC1234'
+JWT_SECRET = 'ABC123',
+  JWT_REFRESH_SECRET = 'ABC1234'
 const generateTokens = (user) => {
   const accessToken = jwt.sign(
     { id: user._id, role: user.role },
@@ -139,48 +140,61 @@ const refresh = async (req, res) => {
 };
 
 const cache = new Map();
-const getUsers = async (req, res)=>{
-  const page =req.query.page ||1;
+const getUsers = async (req, res) => {
+  const page = req.query.page || 1;
   const limit = req.query.limit || 1;
-  const role =req.query.role||user;
-  const skip =(page-1)*limit;
+  const role = req.query.role || user;
+  const skip = (page - 1) * limit;
 
-  const query={}
+  const query = {}
 
-  if (req.query.role){
+  if (req.query.role) {
     query.role = req.query.role;
   }
 
-  
+
   // 🔑 Create unique cache key
   const cacheKey = JSON.stringify({ page, limit, role });
 
-    // ✅ Check cache
+  // ✅ Check cache
   if (cache.has(cacheKey)) {
     const cached = cache.get(cacheKey);
     return res.json(cached.data);
   }
 
   const users = await userModel.find(query)
-  .skip(skip)
-  .limit(limit);
+    .skip(skip)
+    .limit(limit);
 
   const total = await userModel.countDocuments(query);
 
-    const response = {
+  const response = {
     data: users,
     total,
     page,
     totalPages: Math.ceil(total / limit),
   };
 
-   // 💾 Save to cache
+  // 💾 Save to cache
   cache.set(cacheKey, {
     data: response,
     timestamp: Date.now(),
   });
 
 
-   res.json(response);
+  res.json(response);
 }
-module.exports = { healthCheck, createUser, register, login, profile, refresh, getUsers }
+
+
+const getUserById = async (req, res) => {
+  console.log("in controller ",req.params.id)
+  const result = await getUserByIdService(req.params.id);
+
+  if (!result) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  res.json(result);
+};
+
+module.exports = { healthCheck, createUser, register, login, profile, refresh, getUsers, getUserById }
